@@ -1,7 +1,5 @@
 const express = require('express')
 const cors = require('cors')
-var jwt = require('jsonwebtoken');
-
 const app = express()
 require('dotenv').config()
 const port = process.env.PORT || 5000;
@@ -14,32 +12,10 @@ app.use(express.json())
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.rhwxyri.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-
-function verifyjwt(req, res, next) {
-    const authheader = req.headers.authorazation;
-    if (!authheader) {
-        res.status(401).send({ message: 'unauthorazed access' })
-    }
-    const token = authheader.split(' ')[1];
-    jwt.verify(token, process.env.SECRET_TOKEN, function (err, decoded) {
-
-        if (err) {
-            res.status(401).send({ message: 'unauthorazed access' })
-        }
-        res.decoded = decoded;
-        next()
-    })
-}
 async function run() {
     try {
         const serviceCollection = client.db('opticthirst').collection('services');
         const orderCollection = client.db('opticthirst').collection('order')
-
-        app.post('/jwt', (req, res) => {
-            const user = req.body;
-            const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '1h' });
-            res.send({ token });
-        })
 
         app.get('/services', async (req, res) => {
             const query = {};
@@ -63,12 +39,7 @@ async function run() {
         })
 
         // order api 
-        app.get('/orders', verifyjwt, async (req, res) => {
-            const decoded = req.decoded;
-            if (req.decoded !== req.query.email) {
-                res.status(403).send({ message: 'unauthorazed access' })
-
-            }
+        app.get('/orders', async (req, res) => {
             let query = {};
             if (req.query.email) {
                 query = {
